@@ -16,7 +16,7 @@ const scheduleCommunication = (start, end, msg, res = null) => {
   const time = msg.split(" ").length;
   const endTime = currentTime + time;
   let mini = Math.min(start, end), maxi = Math.max(start, end);
-  let overlappingComm = false, collisionIndex = -1;
+  let overlappingComm = false;
 
   // Clean up expired communications
   communicationQueue = communicationQueue.filter(comm => comm.endTime > currentTime);
@@ -29,27 +29,22 @@ const scheduleCommunication = (start, end, msg, res = null) => {
     if ((miniOld <= mini && mini <= maxiOld) || (miniOld <= maxi && maxi <= maxiOld) || 
         (mini <= miniOld && maxiOld <= maxi) || (miniOld <= mini && maxi <= maxiOld)) {
       overlappingComm = true;
-      collisionIndex = i;
       break;
     }
   }
 
   if (overlappingComm) {
     // Handle collision
-    const { start: oldStart, end: oldEnd, msg: oldMsg } = communicationQueue[collisionIndex];
-    communicationQueue.splice(collisionIndex, 1);
 
     const backoffTime1 = Math.floor(Math.random() * 20) + 1;
-    const backoffTime2 = backoffTime1 + 11;
 
-    setTimeout(() => scheduleCommunication(oldStart, oldEnd, oldMsg), backoffTime1 * 1000);
-    setTimeout(() => scheduleCommunication(start, end, msg), backoffTime2 * 1000);
+    setTimeout(() => scheduleCommunication(start, end, msg), backoffTime1 * 1000);
     
-    console.log(`Collision detected and two transmissions have stopped! \nMessage from ${oldStart} to ${oldEnd} will start after backoff of ${backoffTime1}s. \nMessage from ${start} to ${end} will start after backoff of ${backoffTime2}s.`)
+    console.log(`Collision detected and transmissions have stopped! \nMessage from ${start} to ${end} will start after backoff of ${backoffTime1}s.`)
     if (res) {
       return res.status(409).json({
-        message: `Collision detected and two transmissions have stopped! Message from ${oldStart} to ${oldEnd} will start after backoff of ${backoffTime1}s. Message from ${start} to ${end} will start after backoff of ${backoffTime2}s.`, 
-        backoffTimes: { oldMessage: oldMsg, newMessage: msg },
+        message: `Collision detected and transmissions have stopped! \nMessage from ${start} to ${end} will start after backoff of ${backoffTime1}s.`, 
+        backoffTimes: { backoffTime: backoffTime1, Message: msg },
       });
     }
     return;
